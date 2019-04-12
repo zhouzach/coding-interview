@@ -1,0 +1,87 @@
+
+1.批量修改HDFS中目录/user/data下的parquet文件，使用Scala/Java实现；（至少能说出使用到的关键API）；
+
+def renameBulk(fs: FileSystem, srcFilePattern: String, dstFilePrefix: String, dstFileSuffix: String) = {
+
+    val srcPath = new Path(srcFilePattern)
+
+    try {
+      fs.globStatus(srcPath).foreach { file =>
+        val dstPath = new Path(dstFilePrefix + System.currentTimeMillis() + dstFileSuffix)
+        fs.rename(file.getPath, dstPath);
+      }
+    } catch {
+      case e: IOException =>
+        e.printStackTrace()
+    } finally {
+      fs.close()
+    }
+  }
+
+
+
+
+
+
+
+2.怎样使用命令发送一个HTTP请求？使用VIM编辑文件时，怎样搜索一个关键字？查看系统资源的shell命令有哪些？在开发过程中，经常使用到哪些命令？
+
+
+
+
+
+
+
+3.描述Spark提交作业的执行流程
+
+分为四个阶段
+阶段一
+经过一系列的transformation，产生很多RDD，形成DAG
+DAG：（有向无环图，有方向 无闭环）
+数据是有流向的，不是闭环的
+阶段二
+把DAG提交给 DAGScheduler（DAG调度器），
+DAGScheduler 把DAG切分成一个个的 Stage。
+然后把 TaskSet（Task的一个集合）提交给 TaskScheduler（任务调度器）。
+根据窄依赖和宽依赖 来划分 stage,
+每个 stage 可以分成多个 pipeLine。
+不同流水线之间可以并行执行，提高效率.
+有几个分区 就产生几个task。
+阶段三
+把 TaskSet 提交给 TaskScheduler
+任务调度器把任务交给 Executor。
+Cluster Manager（Master）决定在哪些机器上启动 Executor，
+Driver 提交Task 到 Worker 下的 Executor
+阶段四
+Executor 创建很多 Threads，执行 Task。
+把数据写入 HDFS，
+Block manager 管理分区。
+流程总结
+Driver 在启动的时候 指定了要使用多少CPU、内存等资源，
+启动时调用 main方法，在里面创建 sparkContext，和 Master 建立连接，
+Master 根据任务需要多少资源，到集群里找到符合条件的 Worker,
+Master 跟 Worker 进行 RPC 通信，告诉 Worker 启动 Executor。
+Executor 启动之后 就和 Driver 建立起通信。
+Driver 给Executor 下发任务，RDD -> DAG...
+
+
+
+
+
+4.在Spark SQL/Impala/Hive中，当使用多表连接时，任务执行失败，怎样排查故障；找出问题后，怎样优化性能；在之前的开发经历中，遇到过哪些坑；
+
+
+
+
+
+
+
+
+问题1，2，比较基础，如果答不上，就不推荐了
+问题3 偏理论，经典问题
+问题4要求高一点，需要积累经验才能回答全面，能答出一点或者两点，也是可以考虑的
+
+另外，鉴于Spark是用Scala编写，做Spark大数据开发还是优先推荐有Scala经验；目前，市面上会Scala语言还是偏少，找不到合适的，有Java语言也可以考虑，最后送一道编程基础题：
+5.使用scala/java编写一个JDBCUtil工具
+
+
