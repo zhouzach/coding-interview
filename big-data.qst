@@ -24,7 +24,7 @@ def renameBulk(fs: FileSystem, srcFilePattern: String, dstFilePrefix: String, ds
 
 
 
-2.怎样使用命令发送一个HTTP请求？使用VIM编辑文件时，怎样搜索一个关键字？查看系统资源的shell命令有哪些？在开发过程中，经常使用到哪些命令？
+2.怎样使用命令发送一个HTTP POST请求？使用VIM编辑文件时，怎样搜索一个关键字？查看系统资源的shell命令有哪些？在开发过程中，经常使用到哪些命令？
 
 
 
