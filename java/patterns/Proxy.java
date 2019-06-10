@@ -1,3 +1,6 @@
+package patterns;
+
+
 /**
  * https://www.runoob.com/design-pattern/proxy-pattern.html
  *

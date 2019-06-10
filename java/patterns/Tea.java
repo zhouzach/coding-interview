@@ -1,4 +1,4 @@
-
+package patterns;
 
 public interface Tea {
     void showMaterial();

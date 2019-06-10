@@ -1,3 +1,5 @@
+package patterns;
+
 /**
  * https://www.runoob.com/design-pattern/singleton-pattern.html
  *
