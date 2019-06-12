@@ -252,15 +252,19 @@ class BinarySearchTreeWithParentDemo {
         System.out.println();
         bTree.preorderTravel(bTree.getRoot());
 
+        System.out.println();
+        System.out.println("****************************");
 
-//        bTree.inOrder(bTree.getRoot());//2,4,5,6,12,21,45,111
-//        System.out.println();
-//        bTree.inorderTravel(bTree.getRoot());
+        bTree.inOrder(bTree.getRoot());//2,4,5,6,12,21,45,111
+        System.out.println();
+        bTree.inorderTravel(bTree.getRoot());
 
+        System.out.println();
+        System.out.println("****************************");
 
-//        bTree.postOrder(bTree.getRoot());// 5,6,21,111,45,12,4,2
-//        System.out.println();
-//        bTree.postorderTravel(bTree.getRoot());
+        bTree.postOrder(bTree.getRoot());// 5,6,21,111,45,12,4,2
+        System.out.println();
+        bTree.postorderTravel(bTree.getRoot());
 
     }
 }
