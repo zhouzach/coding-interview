@@ -154,7 +154,7 @@ public class BinarySearchTree {
         Stack<Node> s = new Stack<Node>();
         while (root != null || !s.isEmpty()) {
             while (root != null) {
-                s.push(root);//先访问再入栈
+                s.push(root);
                 root = root.left;
             }
             root = s.pop();
@@ -164,8 +164,37 @@ public class BinarySearchTree {
     }
 
     /**
+     * https://www.jianshu.com/p/456af5480cee
+     * @param root
+     */
+    public static void postorderTraversal(Node root) {
+        Stack<Node> treeNodeStack = new Stack<Node>();
+        Node node = root;
+        Node lastVisit = root;
+        while (node != null || !treeNodeStack.isEmpty()) {
+            while (node != null) {
+                treeNodeStack.push(node);
+                node = node.left;
+            }
+
+            //查看当前栈顶元素
+            node = treeNodeStack.peek();
+            if (node.right == null || node.right == lastVisit) { //由于是后序遍历，先要输出孩子，再输出双亲结点，并且是出栈元素，左孩子已经考察过
+                System.out.print(node.data + " ");  //此时左，右孩子都为空 或者左右子树已经被遍历
+                treeNodeStack.pop();
+                lastVisit = node; //将当前结点置为访问过的结点
+                node = null;  //左，右孩子都为空或者左右子树已经被遍历，此时需要出栈，向上迭代，避免之后做压栈，将当前结点置空
+            } else {
+                //否则，继续遍历右子树
+                node = node.right;
+            }
+        }
+    }
+
+    /**
      * @param root 树根节点
-     *             后序遍历不同于先序和中序，它是要先处理完左右子树，然后再处理根(回溯)，所以需要一个记录哪些节点已经被访问的结构(可以在树结构里面加一个标记)，这里可以用map实现
+     *             后序遍历不同于先序和中序，它是要先处理完左右子树，然后再处理根(回溯)，所以需要一个记录哪些节点已经被访问的
+     *             结构(可以在树结构里面加一个标记)，这里可以用map实现
      */
     public static void postOrderStack(Node root) {
         if (root == null) return;
@@ -234,6 +263,8 @@ class Demo {
         System.out.println();
         System.out.println("****************************");
         bTree.postOrder(bTree.getRoot());// 6,21,111,45,12,4,2
+        System.out.println();
+        bTree.postorderTraversal(bTree.getRoot());
         System.out.println();
         bTree.postOrderStack(bTree.getRoot());
 
