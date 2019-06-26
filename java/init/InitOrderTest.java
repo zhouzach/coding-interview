@@ -14,16 +14,22 @@ public class InitOrderTest {
 
     public static void main(String[] args){
         print();
+
+        /**
+         *
+         * 2
+         * 3
+         * a=110,b=0
+         * 1
+         * 4
+         */
     }
 
     static InitOrderTest st = new InitOrderTest();
-    static {
-        System.out.println("1");
-    }
 
-    {
-        System.out.println("2");
-    }
+
+    static int b = 112;
+
 
     InitOrderTest(){
 
@@ -31,11 +37,18 @@ public class InitOrderTest {
         System.out.println("a=" + a + ",b=" +b);
     }
 
+    {
+        System.out.println("2");
+    }
+
     public static void print(){
         System.out.println("4");
 
     }
 
+    static {
+        System.out.println("1");
+    }
+
     int a = 110;
-    static int b = 112;
 }
