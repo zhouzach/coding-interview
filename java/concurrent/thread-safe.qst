@@ -1,0 +1,32 @@
+
+1.java 怎么保持线程安全，除了加锁，有那些线程安全的数据结构？
+https://blog.csdn.net/u010002184/article/details/74892663
+
+synchronized关键字，锁对象，原子变量，对象的wait(),notify()方法；
+
+同步容器类：使用了synchronized
+1.Vector
+2.HashTable
+
+并发容器：
+3.ConcurrentHashMap:分段
+4.CopyOnWriteArrayList：写时复制
+5.CopyOnWriteArraySet：写时复制
+
+Queue:
+6.ConcurrentLinkedQueue：是使用非阻塞的方式实现的基于链接节点的无界的线程安全队列，性能非常好。
+（java.util.concurrent.BlockingQueue 接口代表了线程安全的队列。）
+7.ArrayBlockingQueue：基于数组的有界阻塞队列
+8.LinkedBlockingQueue：基于链表的有界阻塞队列。
+9.PriorityBlockingQueue：支持优先级的无界阻塞队列，即该阻塞队列中的元素可自动排序。默认情况下，元素采取自然升序排列
+10.DelayQueue：一种延时获取元素的无界阻塞队列。
+11.SynchronousQueue：不存储元素的阻塞队列。每个put操作必须等待一个take操作，否则不能继续添加元素。内部其实没有任何一个元素，容量是0
+
+Deque:
+(Deque接口定义了双向队列。双向队列允许在队列头和尾部进行入队出队操作。)
+12.ArrayDeque:基于数组的双向非阻塞队列。
+13.LinkedBlockingDeque:基于链表的双向阻塞队列。
+
+Sorted容器：
+14.ConcurrentSkipListMap：是TreeMap的线程安全版本
+15.ConcurrentSkipListSet：是TreeSet的线程安全版本
