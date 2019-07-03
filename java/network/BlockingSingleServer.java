@@ -4,7 +4,10 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class BlockSingleServer {
+/**
+ * https://www.runoob.com/java/net-serversocket-socket.html
+ */
+public class BlockingSingleServer {
     public static void main(String[] args) {
         try {
             ServerSocket serverSocket = new ServerSocket(8888);
@@ -33,14 +36,15 @@ public class BlockSingleServer {
 class SingleClient {
     public static void main(String[] args) {
         try {
-            Socket s = new Socket("127.0.0.1", 8888);
+            Socket socket = new Socket("127.0.0.1", 8888);
 
             //构建IO
-            InputStream is = s.getInputStream();
-            OutputStream os = s.getOutputStream();
+            InputStream is = socket.getInputStream();
+            OutputStream os = socket.getOutputStream();
 
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(os));
             //向服务器端发送一条消息
+            Thread.sleep(2000);
             bw.write("hello server\n");
             bw.flush();
 
@@ -48,7 +52,7 @@ class SingleClient {
             BufferedReader br = new BufferedReader(new InputStreamReader(is));
             String mess = br.readLine();
             System.out.println("收到服务器的消息：" + mess);
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
 

@@ -1,0 +1,6 @@
+1.为什么java api的 ServerSocket 只能处理几十到几千个连接,netty能处理数万甚至百万连接。了解各自的原理。
+//http://developer.51cto.com/art/201811/586203.htm
+java api的 ServerSocket来一个client开一个线程，操作系统可以开的线程数有限制，并且切换线程上下文有开销，accept()方法和read()都是阻塞的，大部分CPU时间都会浪费在等待阻塞调用上；
+Netty基于 I/O 复用模型，使用多路复用器 Selector，一个 I/O 线程可以并发处理 N 个客户端连接和读写操作；
+线程模型使用主从 Reactor 多线程事件驱动方式，MainReactor 负责客户端的连接请求，并将请求转交给 SubReactor，SubReactor 负责相应通道的 IO 读写请求，非 IO 请求（具体逻辑处理）的任务则会直接写入队列，等待 worker threads 进行处理；
+Netty 中的 I/O 操作是异步的，包括 Bind、Write、Connect 等操作会简单的返回一个 ChannelFuture
