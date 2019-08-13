@@ -1,5 +1,6 @@
 
 https://www.cnblogs.com/LuisYao/p/6813228.html
+https://www.linkedin.com/pulse/groupbykey-vs-reducebykey-neeraj-sen
 
 1.reduceByKey可以传入自定义函数，而groupByKey不可以
 

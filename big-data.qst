@@ -1,4 +1,13 @@
 
+分区与分桶的区别
+https://spark.apache.org/docs/2.2.0/sql-programming-guide.html
+partitionBy creates a directory structure as described in the Partition Discovery section.
+Thus, it has limited applicability to columns with high cardinality. In contrast bucketBy distributes data
+across a fixed number of buckets and can be used when a number of unique values is unbounded.
+
+
+
+
 1.批量修改HDFS中目录/user/data下的parquet文件，使用Scala/Java实现；（至少能说出使用到的关键API）；
 
 def renameBulk(fs: FileSystem, srcFilePattern: String, dstFilePrefix: String, dstFileSuffix: String) = {
