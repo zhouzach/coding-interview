@@ -17,5 +17,6 @@ https://gite.lirmm.fr/yagoubi/spark/commit/5fccb567b37a94445512c7ec20b830b5e0620
 **ERROR client.TransportResponseHandler: Still have 1 requests outstanding when connection**
 **java.util.concurrent.RejectedExecutionException: Task scala.concurrent.impl.CallbackRunnable@746ad0a1 
 rejected from java.util.concurrent.ThreadPoolExecutor@1756e824[Terminated, pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 15203]**
+https://www.cnblogs.com/hithink/p/9858206.html
 .config("spark.speculation", "true")
 .config("spark.storage.blockManagerTimeoutIntervalMs", 100000)

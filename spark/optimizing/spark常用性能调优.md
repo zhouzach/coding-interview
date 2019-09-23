@@ -6,6 +6,7 @@ ANALYZE TABLE [db_name.]table_name COMPUTE STATISTICS [NOSCAN]
 ANALYZE TABLE [db_name.]table_name COMPUTE STATISTICS FOR COLUMNS col1 [, col2, ...]
 spark.sql("ANALYZE TABLE table_name COMPUTE STATISTICS NOSCAN")
 
+https://stackoverflow.com/questions/50560544/spark-show-cost-based-optimizer-statistics
 val explain = ExplainCommand(df.queryExecution.logical, extended = true, cost = true)
     spark.sessionState.executePlan(explain).executedPlan.executeCollect().foreach {
       r => println(r.getString(0))
