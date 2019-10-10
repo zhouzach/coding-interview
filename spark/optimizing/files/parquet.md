@@ -1,3 +1,4 @@
+docs/cloud-integration.md
 
 ### Parquet I/O Settings
 
