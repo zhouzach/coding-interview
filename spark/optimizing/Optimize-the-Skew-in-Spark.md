@@ -16,9 +16,11 @@ API: org.apache.spark.sql.functions.broadcast(dataFrame)
 
 3.将表拆分为两个表
 
-4.大表随机添加N种随机前缀，小表扩大N倍
+4.设置spark.speculation=true，把预测不乐观的节点去掉来保证程序可稳定运行
 
-5.开启动态执行计划
+5.大表随机添加N种随机前缀，小表扩大N倍
+
+6.开启动态执行计划
 --conf spark.sql.adaptive.enabled=true \
 --conf spark.sql.adaptive.join.enabled=true \
 --conf spark.sql.adaptive.skewedJoin.enabled=true \
