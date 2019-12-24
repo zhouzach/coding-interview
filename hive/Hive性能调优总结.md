@@ -1,308 +1,21 @@
 
 https://www.cnblogs.com/frankdeng/p/9463897.html
 
-一、Fetch抓取
-
-1、理论分析
-
-Fetch抓取是指，Hive中对某些情况的查询可以不必使用MapReduce计算。例如：SELECT * FROM employees;在这种情况下，Hive可以简单地读取employee对应的存储目录下的文件，然后输出查询结果到控制台。
-
-
-在hive-default.xml.template文件中hive.fetch.task.conversion默认是more，老版本hive默认是minimal，该属性修改为more以后，在全局查找、字段查找、limit查找等都不走mapreduce。
-
-<property>
-    <name>hive.fetch.task.conversion</name>
-    <value>more</value>
-    <description>
-      Expects one of [none, minimal, more].
-      Some select queries can be converted to single FETCH task minimizing latency.
-      Currently the query should be single sourced not having any subquery and should not have
-      any aggregations or distincts (which incurs RS), lateral views and joins.
-      0. none : disable hive.fetch.task.conversion
-      1. minimal : SELECT STAR, FILTER on partition columns, LIMIT only
-      2. more  : SELECT, FILTER, LIMIT only (support TABLESAMPLE and virtual columns)
-    </description>
-  </property>
-复制代码
-2、案例实操
-
-（1）把hive.fetch.task.conversion设置成none，然后执行查询语句，都会执行mapreduce程序。
-
-
-hive (default)> set hive.fetch.task.conversion=none;
-
-
-hive (default)> select * from emp;
-
-
-hive (default)> select ename from emp;
-
-
-hive (default)> select ename from emp limit 3;
-
-
-（2）把hive.fetch.task.conversion设置成more，然后执行查询语句，如下查询方式都不会执行mapreduce程序。
-
-
-hive (default)> set hive.fetch.task.conversion=more;
-
-
-hive (default)> select * from emp;
-
-
-hive (default)> select ename from emp;
-
-
-hive (default)> select ename from emp limit 3;
-
-二、本地模式
-
-1、理论分析
-
-Hive 在集群上查询时，默认是在集群上 N 台机器上运行， 需要多个机器进行协调运行，这 个方式很好地解决了大数据量的查询问题。但是当 Hive 查询处理的数据量比较小时，其实没有必要启动分布式模式去执行，因为以分布式方式执行就涉及到跨网络传输、多节点协调 等，并且消耗资源。这个时间可以只使用本地模式来执行 mapreduce job，只在一台机器上执行，速度会很快。启动本地模式涉及到三个参数：
-
-
-
-set hive.exec.mode.local.auto=true 是打开 hive 自动判断是否启动本地模式的开关，但是只 是打开这个参数并不能保证启动本地模式，要当 map 任务数不超过
-
-hive.exec.mode.local.auto.input.files.max 的个数并且 map 输入文件大小不超过
-
-hive.exec.mode.local.auto.inputbytes.max 所指定的大小时，才能启动本地模式。
-
-
-如下：用户可以通过设置hive.exec.mode.local.auto的值为true，来让Hive在适当的时候自动启动这个优化。
-
-
-set hive.exec.mode.local.auto=true;  //开启本地mr
-
-//设置local mr的最大输入数据量，当输入数据量小于这个值时采用local  mr的方式，默认为134217728，即128M
-
-set hive.exec.mode.local.auto.inputbytes.max=50000000;
-
-//设置local mr的最大输入文件个数，当输入文件个数小于这个值时采用local mr的方式，默认为4
-
-set hive.exec.mode.local.auto.input.files.max=10;
-
-
-2、案例实操
-
-（1）开启本地模式，并执行查询语句
-
-
-hive (default)> set hive.exec.mode.local.auto=true;
-
-
-hive (default)> select * from emp cluster by deptno;
-
-
-Time taken: 1.328 seconds, Fetched: 14 row(s)
-
-
-（2）关闭本地模式，并执行查询语句
-
-
-hive (default)> set hive.exec.mode.local.auto=false;
-
-
-hive (default)> select * from emp cluster by deptno;
-
-
-Time taken: 20.09 seconds, Fetched: 14 row(s)；
-
-三、Hive的压缩存储
+一、Hive的压缩存储
 1、合理利用文件存储格式
 创建表时，尽量使用 orc、parquet 这些列式存储格式，因为列式存储的表，每一列的数据在物理上是存储在一起的，Hive查询时会只遍历需要列数据，大大减少处理的数据量。
 
 2、压缩的原因
-Hive 最终是转为 MapReduce 程序来执行的，而MapReduce 的性能瓶颈在于网络 IO 和 磁盘 IO，要解决性能瓶颈，最主要的是减少数据量，对数据进行压缩是个好的方式。压缩 虽然是减少了数据量，但是压缩过程要消耗CPU的，但是在Hadoop中， 往往性能瓶颈不在于CPU，CPU压力并不大，所以压缩充分利用了比较空闲的 CPU
+Hive 最终是转为 MapReduce 程序来执行的，而MapReduce 的性能瓶颈在于网络 IO 和 磁盘 IO，要解决性能瓶颈，最主要的是减少数据量，对数据进行压缩是个好的方式。
+压缩 虽然是减少了数据量，但是压缩过程要消耗CPU的，但是在Hadoop中， 往往性能瓶颈不在于CPU，CPU压力并不大，所以压缩充分利用了比较空闲的 CPU
 
-3、常用压缩方法对比
 
 
-各个压缩方式所对应的 Class 类：
+二、数据倾斜
+1.join中空key转换
 
-
-
-4、压缩方式的选择
-压缩比率
-
-压缩解压缩速度
-
-是否支持 Split
-
-5、压缩使用
-Job 输出文件按照 block 以 GZip 的方式进行压缩：
-
-set mapreduce.output.fileoutputformat.compress=true // 默认值是 false
-
-set mapreduce.output.fileoutputformat.compress.type=BLOCK // 默认值是 Record
-
-set mapreduce.output.fileoutputformat.compress.codec=org.apache.hadoop.io.compress.GzipCodec // 默认值是 org.apache.hadoop.io.compress.DefaultCodec
-
-Map 输出结果也以 Gzip 进行压缩：
-
-set mapred.map.output.compress=true
-
-set mapreduce.map.output.compress.codec=org.apache.hadoop.io.compress.GzipCodec // 默认值是 org.apache.hadoop.io.compress.DefaultCodec
-
-对 Hive 输出结果和中间都进行压缩：
-
-set hive.exec.compress.output=true // 默认值是 false，不压缩
-
-set hive.exec.compress.intermediate=true // 默认值是 false，为 true 时 MR 设置的压缩才启用
-
-四、表的优化
-1、小表、大表Join
-
-1）理论分析
-
-
-将key相对分散，并且数据量小的表放在join的左边，这样可以有效减少内存溢出错误发生的几率；再进一步，可以使用Group让小的维度表（1000条以下的记录条数）先进内存。在map端完成reduce。
-
-
-实际测试发现：新版的hive已经对小表JOIN大表和大表JOIN小表进行了优化。小表放在左边和右边已经没有明显区别。
-
-
-2）案例实操
-
-
-（0）需求：测试大表JOIN小表和小表JOIN大表的效率
-
-
-（1）建大表、小表和JOIN后表的语句
-
-
-create table bigtable(id bigint, time bigint, uid string, keyword string, url_rank int, click_num int, click_url string) row format delimited fields terminated by '\t';
-
-
-
-create table smalltable(id bigint, time bigint, uid string, keyword string, url_rank int, click_num int, click_url string) row format delimited fields terminated by '\t';
-
-
-
-create table jointable(id bigint, time bigint, uid string, keyword string, url_rank int, click_num int, click_url string) row format delimited fields terminated by '\t';
-
-
-（2）分别向大表和小表中导入数据
-
-
-hive (default)> load data local inpath '/opt/module/datas/bigtable' into table bigtable;
-
-
-hive (default)>load data local inpath '/opt/module/datas/smalltable' into table smalltable;
-
-
-（3）关闭mapjoin功能（默认是打开的）
-
-
-set hive.auto.convert.join = false;
-
-
-（4）执行小表JOIN大表语句
-
-
-insert overwrite table jointable
-
-select b.id, b.time, b.uid, b.keyword, b.url_rank, b.click_num, b.click_url
-
-from smalltable s
-
-left join bigtable  b
-
-on b.id = s.id;
-
-
-Time taken: 35.921 seconds
-
-
-（5）执行大表JOIN小表语句
-
-
-insert overwrite table jointable
-
-select b.id, b.time, b.uid, b.keyword, b.url_rank, b.click_num, b.click_url
-
-from bigtable  b
-
-left join smalltable  s
-
-on s.id = b.id;
-
-
-Time taken: 34.196 seconds；
-
-2、大表Join大表
-1）空KEY过滤
-
-有时join超时是因为某些key对应的数据太多，而相同key对应的数据都会发送到相同的reducer上，从而导致内存不够。此时我们应该仔细分析这些异常的key，很多情况下，这些key对应的数据是异常数据，我们需要在SQL语句中进行过滤。例如key对应的字段为空，操作如下：
-
-案例实操
-
-（1）配置历史服务器
-
-配置mapred-site.xml
-
-<property>
-
-<name>mapreduce.jobhistory.address</name>
-
-<value>node21:10020</value>
-
-</property>
-
-<property>
-
-    <name>mapreduce.jobhistory.webapp.address</name>
-
-    <value>node21:19888</value>
-
-</property>
-
-启动历史服务器
-
-sbin/mr-jobhistory-daemon.sh start historyserver
-
-查看jobhistory
-
-http://node21:19888/jobhistory
-
-（2）创建原始数据表、空id表、合并后数据表
-
-create table ori(id bigint, time bigint, uid string, keyword string, url_rank int, click_num int, click_url string) row format delimited fields terminated by '\t';
-
-
-
-create table nullidtable(id bigint, time bigint, uid string, keyword string, url_rank int, click_num int, click_url string) row format delimited fields terminated by '\t';
-
-
-
-create table jointable(id bigint, time bigint, uid string, keyword string, url_rank int, click_num int, click_url string) row format delimited fields terminated by '\t';
-
-（3）分别加载原始数据和空id数据到对应表中
-
-hive (default)> load data local inpath '/opt/module/datas/ori' into table ori;
-
-hive (default)> load data local inpath '/opt/module/datas/nullid' into table nullidtable;
-
-（4）测试不过滤空id
-
-hive (default)> insert overwrite table jointable
-
-select n.* from nullidtable n left join ori o on n.id = o.id;
-
-Time taken: 42.038 seconds
-
-（5）测试过滤空id
-
-hive (default)> insert overwrite table jointable
-
-select n.* from (select * from nullidtable where id is not null ) n  left join ori o on n.id = o.id;
-
-Time taken: 31.725 seconds
-
-2）空key转换
-
-有时虽然某个key为空对应的数据很多，但是相应的数据不是异常数据，必须要包含在join的结果中，此时我们可以表a中key为空的字段赋一个随机的值，使得数据随机均匀地分不到不同的reducer上。例如：
+有时虽然某个key为空对应的数据很多，但是相应的数据不是异常数据，必须要包含在join的结果中，此时我们可以表a中key为空的字段赋一个随机的值，
+使得数据随机均匀地分不到不同的reducer上。例如：
 
 案例实操：
 
@@ -338,12 +51,28 @@ case when n.id is null then concat('hive', rand()) else n.id end = o.id;
 
 结果：可以看出来，消除了数据倾斜，负载均衡reducer的资源消耗
 
+2、笛卡尔积
+尽量避免笛卡尔积，join的时候不加on条件，或者无效的on条件，Hive只能使用1个reducer来完成笛卡尔积
+
+当 Hive 设定为严格模式（hive.mapred.mode=strict）时，不允许在 HQL 语句中出现笛卡尔积， 这实际说明了 Hive 对笛卡尔积支持较弱。因为找不到 Join key，
+Hive 只能使用 1 个 reducer 来完成笛卡尔积。
+
+当然也可以使用 limit 的办法来减少某个表参与 join 的数据量，但对于需要笛卡尔积语义的 需求来说，经常是一个大表和一个小表的 Join 操作，
+结果仍然很大（以至于无法用单机处 理），这时 MapJoin才是最好的解决办法。MapJoin，顾名思义，会在 Map 端完成 Join 操作。 这需要将 Join 操作的一个或多个表完全读入内存。
+
+PS：MapJoin 在子查询中可能出现未知 BUG。在大表和小表做笛卡尔积时，规避笛卡尔积的 方法是，给 Join 添加一个 Join key，
+原理很简单：将小表扩充一列 join key，并将小表的条 目复制数倍，join key 各不相同；将大表扩充一列 join key 为随机数。
+
+精髓就在于复制几倍，最后就有几个 reduce 来做，而且大表的数据是前面小表扩张 key 值 范围里面随机出来的，所以复制了几倍 n，就相当于这个随机范围就有多大 n，
+那么相应的， 大表的数据就被随机的分为了 n 份。并且最后处理所用的 reduce 数量也是 n，而且也不会 出现数据倾斜。
+
 
 
 3、Map Join
 理论分析
 
-如果不指定MapJoin或者不符合MapJoin的条件，那么Hive解析器会将Join操作转换成Common Join，即：在Reduce阶段完成join。容易发生数据倾斜。可以用MapJoin把小表全部加载到内存在map端进行join，避免reducer处理。
+如果不指定MapJoin或者不符合MapJoin的条件，那么Hive解析器会将Join操作转换成Common Join，即：在Reduce阶段完成join。容易发生数据倾斜。
+可以用MapJoin把小表全部加载到内存在map端进行join，避免reducer处理。
 
 1）开启MapJoin参数设置：
 
@@ -357,50 +86,18 @@ set hive.mapjoin.smalltable.filesize=25000000;
 
 2）MapJoin工作机制
 
-
-
-首先是Task A，它是一个Local Task（在客户端本地执行的Task），负责扫描小表b的数据，将其转换成一个HashTable的数据结构，并写入本地的文件中，之后将该文件加载到DistributeCache中。
+首先是Task A，它是一个Local Task（在客户端本地执行的Task），负责扫描小表b的数据，将其转换成一个HashTable的数据结构，并写入本地的文件中，
+之后将该文件加载到DistributeCache中。
 
 接下来是Task B，该任务是一个没有Reduce的MR，启动MapTasks扫描大表a,在Map阶段，根据a的每一条记录去和DistributeCache中b表对应的HashTable关联，并直接输出结果。
 
 由于MapJoin没有Reduce，所以由Map直接输出结果文件，有多少个Map Task，就有多少个结果文件。
 
-案例实操：
 
-（1）开启Mapjoin功能
-
-set hive.auto.convert.join = true; 默认为true
-
-（2）执行小表JOIN大表语句
-
-insert overwrite table jointable
-
-select b.id, b.time, b.uid, b.keyword, b.url_rank, b.click_num, b.click_url
-
-from smalltable s
-
-join bigtable  b
-
-on s.id = b.id;
-
-Time taken: 24.594 seconds
-
-（3）执行大表JOIN小表语句
-
-insert overwrite table jointable
-
-select b.id, b.time, b.uid, b.keyword, b.url_rank, b.click_num, b.click_url
-
-from bigtable  b
-
-join smalltable  s
-
-on s.id = b.id;
-
-Time taken: 24.315 seconds
 
 4、Group By
-默认情况下，Map阶段同一Key数据分发给一个reduce，当一个key数据过大时就倾斜了。并不是所有的聚合操作都需要在Reduce端完成，很多聚合操作都可以先在Map端进行部分聚合，最后在Reduce端得出最终结果。
+默认情况下，Map阶段同一Key数据分发给一个reduce，当一个key数据过大时就倾斜了。并不是所有的聚合操作都需要在Reduce端完成，很多聚合操作都可以先在Map端进行部分聚合，
+最后在Reduce端得出最终结果。
 
 1）开启Map端聚合参数设置
 
@@ -416,179 +113,16 @@ set hive.groupby.mapaggr.checkinterval = 100000
 
 set hive.groupby.skewindata = true
 
-    当选项设定为 true，生成的查询计划会有两个MR Job。第一个MR Job中，Map的输出结果会随机分布到Reduce中，每个Reduce做部分聚合操作，并输出结果，这样处理的结果是相同的Group By Key有可能被分发到不同的Reduce中，从而达到负载均衡的目的；第二个MR Job再根据预处理的数据结果按照Group By Key分布到Reduce中（这个过程可以保证相同的Group By Key被分布到同一个Reduce中），最后完成最终的聚合操作。
-
-5、Count(Distinct)
-数据量小的时候无所谓，数据量大的情况下，由于COUNT DISTINCT操作需要用一个Reduce Task来完成，这一个Reduce需要处理的数据量太大，就会导致整个Job很难完成，一般COUNT DISTINCT使用先GROUP BY再COUNT的方式替换：
-
-案例实操
-
-（1）创建一张大表
-
-hive (default)> create table bigtable(id bigint, time bigint, uid string, keyword string, url_rank int, click_num int, click_url string) row format delimited fields terminated by '\t';
-
-（2）加载数据
-
-hive (default)> load data local inpath '/opt/module/datas/bigtable' into table bigtable;
-
-（3）设置5个reduce个数
-
-set mapreduce.job.reduces = 5;
-
-（4）执行去重id查询
-
-hive (default)> select count(distinct id) from bigtable;
-
-Stage-Stage-1: Map: 1  Reduce: 1   Cumulative CPU: 7.12 sec   HDFS Read: 120741990 HDFS Write: 7 SUCCESS
-
-Total MapReduce CPU Time Spent: 7 seconds 120 msec
-
-OK
-
-c0
-
-100001
-
-Time taken: 23.607 seconds, Fetched: 1 row(s)
-
-Time taken: 34.941 seconds, Fetched: 1 row(s)
-
-（5）采用GROUP by去重id
-
-hive (default)> select count(id) from (select id from bigtable group by id) a;
-
-Stage-Stage-1: Map: 1  Reduce: 5   Cumulative CPU: 17.53 sec   HDFS Read: 120752703 HDFS Write: 580 SUCCESS
-
-Stage-Stage-2: Map: 3  Reduce: 1   Cumulative CPU: 4.29 sec   HDFS Read: 9409 HDFS Write: 7 SUCCESS
-
-Total MapReduce CPU Time Spent: 21 seconds 820 msec
-
-OK
-
-_c0
-
-100001
-
-Time taken: 50.795 seconds, Fetched: 1 row(s)
-
-虽然会多用一个Job来完成，但在数据量大的情况下，这个绝对是值得的。
-
-6、笛卡尔积
-尽量避免笛卡尔积，join的时候不加on条件，或者无效的on条件，Hive只能使用1个reducer来完成笛卡尔积
-
-当 Hive 设定为严格模式（hive.mapred.mode=strict）时，不允许在 HQL 语句中出现笛卡尔积， 这实际说明了 Hive 对笛卡尔积支持较弱。因为找不到 Join key，Hive 只能使用 1 个 reducer 来完成笛卡尔积。
-
-当然也可以使用 limit 的办法来减少某个表参与 join 的数据量，但对于需要笛卡尔积语义的 需求来说，经常是一个大表和一个小表的 Join 操作，结果仍然很大（以至于无法用单机处 理），这时 MapJoin才是最好的解决办法。MapJoin，顾名思义，会在 Map 端完成 Join 操作。 这需要将 Join 操作的一个或多个表完全读入内存。
-
-PS：MapJoin 在子查询中可能出现未知 BUG。在大表和小表做笛卡尔积时，规避笛卡尔积的 方法是，给 Join 添加一个 Join key，原理很简单：将小表扩充一列 join key，并将小表的条 目复制数倍，join key 各不相同；将大表扩充一列 join key 为随机数。
-
-精髓就在于复制几倍，最后就有几个 reduce 来做，而且大表的数据是前面小表扩张 key 值 范围里面随机出来的，所以复制了几倍 n，就相当于这个随机范围就有多大 n，那么相应的， 大表的数据就被随机的分为了 n 份。并且最后处理所用的 reduce 数量也是 n，而且也不会 出现数据倾斜。
-
-7、行列过滤
-列处理：在SELECT中，只拿需要的列，如果有，尽量使用分区过滤，少用SELECT *。
-
-行处理：在分区剪裁中，当使用外关联时，如果将副表的过滤条件写在Where后面，那么就会先全表关联，之后再过滤，比如：
-
-案例实操：
-
-（1）测试先关联两张表，再用where条件过滤
-
-hive (default)> select o.id from bigtable b
-
-join ori o on o.id = b.id
-
-where o.id <= 10;
-
-Time taken: 34.406 seconds, Fetched: 100 row(s)
-
-Time taken: 26.043 seconds, Fetched: 100 row(s)
-
-（2）通过子查询后，再关联表
-
-hive (default)> select b.id from bigtable b
-
-join (select id from ori where id <= 10 ) o on b.id = o.id;
-
-Time taken: 30.058 seconds, Fetched: 100 row(s)
-
-Time taken: 29.106 seconds, Fetched: 100 row(s)
-
-8、动态分区调整
-关系型数据库中，对分区表Insert数据时候，数据库自动会根据分区字段的值，将数据插入到相应的分区中，Hive中也提供了类似的机制，即动态分区(Dynamic Partition)，只不过，使用Hive的动态分区，需要进行相应的配置。
-
-1）开启动态分区参数设置
-
-（1）开启动态分区功能（默认true，开启）
-
-hive.exec.dynamic.partition=true
-
-（2）设置为非严格模式（动态分区的模式，默认strict，表示必须指定至少一个分区为静态分区，nonstrict模式表示允许所有的分区字段都可以使用动态分区。）
-
-hive.exec.dynamic.partition.mode=nonstrict
-
-（3）在所有执行MR的节点上，最大一共可以创建多少个动态分区。
-
-hive.exec.max.dynamic.partitions=1000
-
-（4）在每个执行MR的节点上，最大可以创建多少个动态分区。该参数需要根据实际的数据来设定。比如：源数据中包含了一年的数据，即day字段有365个值，那么该参数就需要设置成大于365，如果使用默认值100，则会报错。
-
-hive.exec.max.dynamic.partitions.pernode=100
-
-（5）整个MR Job中，最大可以创建多少个HDFS文件。
-
-hive.exec.max.created.files=100000
-
-（6）当有空分区生成时，是否抛出异常。一般不需要设置。
-
-hive.error.on.empty.partition=false
-
-2）案例实操
-
-需求：将ori中的数据按照时间(如：20111230000008)，插入到目标表ori_partitioned_target的相应分区中。
-
-（1）创建分区表
-
-create table ori_partitioned(id bigint, time bigint, uid string, keyword string, url_rank int, click_num int, click_url string)
-
-partitioned by (p_time bigint)
-
-row format delimited fields terminated by '\t';
-
-（2）加载数据到分区表中
-
-hive (default)> load data local inpath '/opt/module/datas/ds1' into table ori_partitioned partition(p_time='20111230000010') ;
-
-hive (default)> load data local inpath '/opt/module/datas/ds2' into table ori_partitioned partition(p_time='20111230000011') ;
-
-（3）创建目标分区表
-
-create table ori_partitioned_target(id bigint, time bigint, uid string, keyword string, url_rank int, click_num int, click_url string) PARTITIONED BY (p_time STRING) row format delimited fields terminated by '\t';
-
-（4）设置动态分区
-
-set hive.exec.dynamic.partition = true;
-
-set hive.exec.dynamic.partition.mode = nonstrict;
-
-set hive.exec.max.dynamic.partitions = 1000;
-
-set hive.exec.max.dynamic.partitions.pernode = 100;
-
-set hive.exec.max.created.files = 100000;
-
-set hive.error.on.empty.partition = false;
-
-
-
-hive (default)> insert overwrite table ori_partitioned_target partition (p_time)
-
-select id, time, uid, keyword, url_rank, click_num, click_url, p_time from ori_partitioned;
-
-（5）查看目标分区表的分区情况
-
-hive (default)> show partitions ori_partitioned_target;
-
-9、优化 in/exists 语句
+    当选项设定为 true，生成的查询计划会有两个MR Job。第一个MR Job中，Map的输出结果会随机分布到Reduce中，每个Reduce做部分聚合操作，并输出结果，
+    这样处理的结果是相同的Group By Key有可能被分发到不同的Reduce中，从而达到负载均衡的目的；第二个MR Job再根据预处理的数据结果按照Group By Key分布
+    到Reduce中（这个过程可以保证相同的Group By Key被分布到同一个Reduce中），最后完成最终的聚合操作。
+
+三、Sql语句优化
+1、Count(Distinct)
+数据量小的时候无所谓，数据量大的情况下，由于COUNT DISTINCT操作需要用一个Reduce Task来完成，这一个Reduce需要处理的数据量太大，就会导致整个Job很难完成，
+一般COUNT DISTINCT使用先GROUP BY再COUNT的方式替换：
+
+2、left join 替换 in/exists 语句
 虽然经过测验，hive1.2.1 也支持 in/exists 操作，但还是推荐使用 hive 的一个高效替代方案：left semi join
 
 比如说：
@@ -598,7 +132,8 @@ select a.id, a.name from a where exists (select id from b where a.id = b.id);
 应该转换成：
 
 select a.id, a.name from a left semi join b on a.id = b.id;
-10、排序选择
+
+3、排序选择
 cluster by：对同一字段分桶并排序，不能和 sort by 连用
 
 distribute by + sort by：分桶，保证同一字段值只存在一个结果文件当中，结合 sort by 保证 每个 reduceTask 结果有序
@@ -607,7 +142,7 @@ sort by：单机排序，单个 reduce 结果有序
 
 order by：全局排序，缺陷是只能使用一个 reduce
 
-11、合并 MapReduce操作
+4、合并 MapReduce操作
 Multi-group by 是 Hive 的一个非常好的特性，它使得 Hive 中利用中间结果变得非常方便。 例如：
 
 FROM (SELECT a.status, b.school, b.gender FROM status_updates a JOIN profiles b ON (a.userid =
@@ -618,10 +153,9 @@ INSERT OVERWRITE TABLE school_summary PARTITION(ds='2009-03-20')
 SELECT subq1.school, COUNT(1) GROUP BY subq1.school
 上述查询语句使用了 multi-group by 特性连续 group by 了 2 次数据，使用不同的 group by key。 这一特性可以减少一次 MapReduce 操作
 
-12、合理利用分桶：Bucketing 和 Sampling
+5、合理利用分桶：Bucketing 和 Sampling
 Bucket 是指将数据以指定列的值为 key 进行 hash，hash 到指定数目的桶中。这样就可以支持高效采样了。如下例就是以 userid 这一列为 bucket 的依据，共设置 32 个 buckets
 
-复制代码
 CREATE TABLE page_view(viewTime INT, userid BIGINT,
  page_url STRING, referrer_url STRING,
  ip STRING COMMENT 'IP Address of the User')
@@ -633,7 +167,7 @@ CREATE TABLE page_view(viewTime INT, userid BIGINT,
  COLLECTION ITEMS TERMINATED BY '2'
  MAP KEYS TERMINATED BY '3'
  STORED AS SEQUENCEFILE;
-复制代码
+ 
 通常情况下，Sampling 在全体数据上进行采样，这样效率自然就低，它要去访问所有数据。 而如果一个表已经对某一列制作了 bucket，就可以采样所有桶中指定序号的某个桶，这就减少了访问量。
 
 如下例所示就是采样了 page_view 中 32 个桶中的第三个桶的全部数据：
@@ -871,3 +405,32 @@ hive (default)> explain extended select * from emp;
 
 hive (default)> explain extended select deptno, avg(sal) avg_sal from emp group by deptno;
 
+
+8、动态分区调整
+关系型数据库中，对分区表Insert数据时候，数据库自动会根据分区字段的值，将数据插入到相应的分区中，Hive中也提供了类似的机制，即动态分区(Dynamic Partition)，只不过，使用Hive的动态分区，需要进行相应的配置。
+
+1）开启动态分区参数设置
+
+（1）开启动态分区功能（默认true，开启）
+
+hive.exec.dynamic.partition=true
+
+（2）设置为非严格模式（动态分区的模式，默认strict，表示必须指定至少一个分区为静态分区，nonstrict模式表示允许所有的分区字段都可以使用动态分区。）
+
+hive.exec.dynamic.partition.mode=nonstrict
+
+（3）在所有执行MR的节点上，最大一共可以创建多少个动态分区。
+
+hive.exec.max.dynamic.partitions=1000
+
+（4）在每个执行MR的节点上，最大可以创建多少个动态分区。该参数需要根据实际的数据来设定。比如：源数据中包含了一年的数据，即day字段有365个值，那么该参数就需要设置成大于365，如果使用默认值100，则会报错。
+
+hive.exec.max.dynamic.partitions.pernode=100
+
+（5）整个MR Job中，最大可以创建多少个HDFS文件。
+
+hive.exec.max.created.files=100000
+
+（6）当有空分区生成时，是否抛出异常。一般不需要设置。
+
+hive.error.on.empty.partition=false
