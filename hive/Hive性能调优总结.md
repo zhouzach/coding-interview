@@ -10,7 +10,6 @@ Hive 最终是转为 MapReduce 程序来执行的，而MapReduce 的性能瓶颈
 压缩 虽然是减少了数据量，但是压缩过程要消耗CPU的，但是在Hadoop中， 往往性能瓶颈不在于CPU，CPU压力并不大，所以压缩充分利用了比较空闲的 CPU
 
 
-
 二、数据倾斜
 1.join中空key转换
 
@@ -32,7 +31,6 @@ insert overwrite table jointable
 select n.* from nullidtable n left join ori b on n.id = b.id;
 
 结果：可以看出来，出现了数据倾斜，某些reducer的资源消耗远大于其他reducer。
-
 
 
 随机分布空null值
@@ -65,7 +63,6 @@ PS：MapJoin 在子查询中可能出现未知 BUG。在大表和小表做笛卡
 
 精髓就在于复制几倍，最后就有几个 reduce 来做，而且大表的数据是前面小表扩张 key 值 范围里面随机出来的，所以复制了几倍 n，就相当于这个随机范围就有多大 n，
 那么相应的， 大表的数据就被随机的分为了 n 份。并且最后处理所用的 reduce 数量也是 n，而且也不会 出现数据倾斜。
-
 
 
 3、Map Join
@@ -161,14 +158,15 @@ CREATE TABLE page_view(viewTime INT, userid BIGINT,
  ip STRING COMMENT 'IP Address of the User')
  COMMENT 'This is the page view table'
  PARTITIONED BY(dt STRING, country STRING)
- CLUSTERED BY(userid) SORTED BY(viewTime) INTO 32 BUCKETS
+ CLUSTERED BY(userid)  INTO 32 BUCKETS
  ROW FORMAT DELIMITED
  FIELDS TERMINATED BY '1'
  COLLECTION ITEMS TERMINATED BY '2'
  MAP KEYS TERMINATED BY '3'
- STORED AS SEQUENCEFILE;
+ STORED AS PARQUET;
  
-通常情况下，Sampling 在全体数据上进行采样，这样效率自然就低，它要去访问所有数据。 而如果一个表已经对某一列制作了 bucket，就可以采样所有桶中指定序号的某个桶，这就减少了访问量。
+通常情况下，Sampling 在全体数据上进行采样，这样效率自然就低，它要去访问所有数据。 而如果一个表已经对某一列制作了 bucket，就可以采样所有桶中指定序号的某个桶，
+这就减少了访问量。
 
 如下例所示就是采样了 page_view 中 32 个桶中的第三个桶的全部数据：
 
