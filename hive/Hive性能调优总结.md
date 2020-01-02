@@ -177,10 +177,11 @@ SELECT * FROM page_view TABLESAMPLE(BUCKET 3 OUT OF 64);
 五、数据倾斜
 1、Map数
 1）通常情况下，作业会通过input的目录产生一个或者多个map任务。主要的决定因素有：input的文件总个数，input的文件大小，集群设置的文件块大小。
-
-在 MapReduce 的编程案例中，我们得知，一个MR Job的 MapTask 数量是由输入分片 InputSplit 决定的。而输入分片是由 FileInputFormat.getSplit()决定的。一个输入分片对应一个 MapTask， 而输入分片是由三个参数决定的：
-
-
+在 MapReduce 的编程案例中，我们得知，一个MR Job的 MapTask 数量是由输入分片 InputSplit 决定的。而输入分片是由 FileInputFormat.getSplit()决定的。
+一个输入分片对应一个 MapTask， 而输入分片是由三个参数决定的：
+dfs.blocksize    128M     HDFS默认数据块大小
+mapreduce.input.fileinputformat.split.minsize       1                    最小分片大小
+mapreduce.input.fileinputformat.split.maxsize       Long.MAX_VALUE       最大分片大小
 
 输入分片大小的计算是这么计算出来的：
 

@@ -38,7 +38,7 @@ set hive.mapjoin.smalltable.filesize=25000000;（默认25M以下认为是小表�
 6.Map端聚合:
 set hive.map.aggr = true; //默认为True
 set hive.groupby.mapaggr.checkinterval = 100000
-set hive.groupby.skewindata = true; //默认是false
+set hive.groupby.skewindata = true; //负载均衡，默认是false
 
 7.设置Map数：
 df.blocksize   128M

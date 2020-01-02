@@ -13,9 +13,9 @@ https://zhuanlan.zhihu.com/p/91044262
 
 1>参数调节：
 
-    hive.map.aggr=true
+    hive.map.aggr=true //map端聚合
 
-    hive.groupby.skewindata=true
+    hive.groupby.skewindata=true //负载均衡
 
 有数据倾斜的时候进行负载均衡，当选项设定为true,生成的查询计划会有两个MR Job。第一个MR Job中，Map的输出结果集合会随机分布到Reduce中，
 每个Reduce做部分聚合操作，并输出结果，这样处理的结果是相同Group By Key有可能被分发到不同的Reduce中，从而达到负载均衡的目的；
