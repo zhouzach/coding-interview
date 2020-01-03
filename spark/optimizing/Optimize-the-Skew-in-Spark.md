@@ -1,5 +1,6 @@
 
 
+https://mp.weixin.qq.com/s/lqMu6lfk-Ny1ZHYruEeBdA
 https://blog.clairvoyantsoft.com/optimize-the-skew-in-spark-e523c6ee18ac
 http://www.jasongj.com/spark/skew/
 
