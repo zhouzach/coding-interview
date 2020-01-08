@@ -1,0 +1,9 @@
+
+first、count、lookup、collect
+take、top、takeOrdered
+aggregate、fold、reduce、countByKey、sortBy
+foreach、foreachPartition、
+
+saveAsTextFile、saveAsSequenceFile、saveAsObjectFile
+saveAsHadoopFile、saveAsHadoopDataset
+saveAsNewAPIHadoopFile、saveAsNewAPIHadoopDatas
