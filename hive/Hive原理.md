@@ -4,7 +4,7 @@ https://zhuanlan.zhihu.com/p/75550159
 
 1. 用户提交查询等任务给Driver。
 
-2. 编译器获得该用户的任务Plan。
+2. Driver将查询计划发送给编译器。
 
 3. 编译器Compiler根据用户任务去MetaStore中获取需要的Hive的元数据信息。
 
