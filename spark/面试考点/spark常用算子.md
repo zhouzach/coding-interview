@@ -24,8 +24,8 @@ def groupByKey(): RDD[(K, Iterable[V])]
 （2）aggregateByKey()是先对每个partition中的数据根据不同的Key进行aggregate，然后将结果进行shuffle，完成各个partition之间的aggregate。因此，和groupByKey()相比，运算量小了很多。
 （3）reduceByKey()也是先在单台机器中计算，再将结果进行shuffle，减小运算量
 
-def mapValues[U](f: V => U): RDD[(K, U)]
-def flatMapValues[U](f: V => TraversableOnce[U]): RDD[(K, U)]
+def mapValues[U](f: V => U): RDD[(K, U)] //PairRDDFunctions,对键值对每个value都应用一个函数，但是，key不会发生变化。
+def flatMapValues[U](f: V => TraversableOnce[U]): RDD[(K, U)] //同基本转换操作中的flatMap，只不过flatMapValues是针对[K,V]中的V值进行flatMap操作
 
 def filter(f: T => Boolean): RDD[T]
 def flatMap[U: ClassTag](f: T => TraversableOnce[U]): RDD[U]
